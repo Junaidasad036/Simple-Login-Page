@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Walk & Umbrella Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0e1420;
+    --sky-a: #1b2740;
+    --sky-b: #0e1420;
+    --card: #141b2c;
+    --text: #e8ecf4;
+    --muted: #7d879c;
+    --accent-a: #4cc9f0;
+    --accent-b: #7b61ff;
+    --skin: #f1c19a;
+    --coat: #2f3b52;
+    --umbrella: #ff6b81;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background: linear-gradient(180deg, var(--sky-a), var(--sky-b) 70%);
+    color: var(--text);
+    font-family:'Inter',sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+
+  .stage{
+    position:relative;
+    width:100%; max-width:480px; height:520px;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+
+  .ground{
+    position:absolute; bottom:0; left:0; right:0; height:2px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* --- Walking figure --- */
+  .walker{
+    position:absolute;
+    bottom:0;
+    left:-80px;
+    width:60px; height:150px;
+    animation: walkAcross 3.2s ease-in-out forwards;
+  }
+  @keyframes walkAcross{
+    0%{ left:-80px; }
+    75%{ left:calc(50% - 30px); }
+    100%{ left:calc(50% - 30px); }
+  }
+
+  .walker svg{ width:100%; height:100%; overflow:visible; }
+
+  .leg{
+    transform-origin: 30px 95px;
+    animation: legSwing 0.5s ease-in-out infinite;
+    animation-play-state: running;
+  }
+  .leg.back{ animation-delay: 0.25s; }
+  .walker.stopped .leg{ animation-play-state: paused; }
+
+  @keyframes legSwing{
+    0%,100%{ transform: rotate(18deg); }
+    50%{ transform: rotate(-18deg); }
+  }
+
+  .arm{
+    transform-origin: 30px 55px;
+    animation: armSwing 0.5s ease-in-out infinite;
+  }
+  .arm.back{ animation-delay:0.25s; }
+  .walker.stopped .arm{ animation: none; }
+  .walker.stopped .arm.front{ transform: rotate(0deg); }
+
+  @keyframes armSwing{
+    0%,100%{ transform: rotate(-22deg); }
+    50%{ transform: rotate(22deg); }
+  }
+
+  .bob{
+    animation: bob 0.25s ease-in-out infinite;
+  }
+  .walker.stopped .bob{ animation:none; }
+
+  @keyframes bob{
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(-4px); }
+  }
+
+  /* Umbrella */
+  .umbrella-group{
+    transform-origin: 30px 40px;
+    transform: scale(0.05) rotate(-10deg);
+    opacity: 0;
+  }
+  .walker.opened .umbrella-group{
+    animation: openUmbrella 0.6s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes openUmbrella{
+    0%{ transform: scale(0.05) rotate(-10deg); opacity:0; }
+    60%{ transform: scale(1.15) rotate(4deg); opacity:1; }
+    100%{ transform: scale(1) rotate(0deg); opacity:1; }
+  }
+
+  /* Rain */
+  .rain{
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:0;
+    transition: opacity 0.6s ease;
+  }
+  .rain.show{ opacity:1; }
+  .drop{
+    position:absolute;
+    width:2px; height:16px;
+    background: linear-gradient(var(--accent-a), transparent);
+    top:-20px;
+    animation: fall linear infinite;
+    opacity:0.6;
+  }
+  @keyframes fall{
+    to{ transform: translateY(560px); }
+  }
+
+  /* Login card */
+  .login-card{
+    position:absolute;
+    bottom: 40px;
+    width: min(320px, 86%);
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 30px 26px;
+    opacity:0;
+    transform: translateY(24px) scale(0.96);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .login-card.show{
+    animation: cardIn 0.7s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  @keyframes cardIn{
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  h1.title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px; margin:0 0 4px; text-align:center;
+  }
+  p.sub{
+    text-align:center; color:var(--muted); font-size:13px; margin:0 0 22px;
+  }
+
+  .field{
+    display:flex; align-items:center; gap:10px;
+    background: rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.09);
+    border-radius: 11px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .field:focus-within{
+    border-color: var(--accent-a);
+    background: rgba(76,201,240,0.05);
+  }
+  .field svg{ width:18px; height:18px; flex-shrink:0; color: var(--muted); }
+  .field:focus-within svg{ color: var(--accent-a); }
+  .field input{
+    border:none; background:transparent; outline:none;
+    color:var(--text); font-size:14px; width:100%;
+    font-family:'Inter',sans-serif;
+  }
+  .field input::placeholder{ color: var(--muted); }
+
+  button.submit{
+    width:100%;
+    border:none; border-radius:11px; padding:13px;
+    font-weight:600; font-size:14px; color:#0b0f19;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    cursor:pointer; margin-top:6px;
+    transition: transform 0.15s ease;
+  }
+  button.submit:active{ transform: scale(0.98); }
+
+  @media (prefers-reduced-motion: reduce){
+    .walker, .leg, .arm, .bob, .umbrella-group, .drop, .login-card{ animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="ground"></div>
+  <div class="rain" id="rain"></div>
+
+  <div class="walker" id="walker">
+    <svg viewBox="0 0 60 150">
+      <!-- back leg -->
+      <g class="leg back">
+        <rect x="24" y="95" width="10" height="40" rx="4" fill="var(--coat)"/>
+      </g>
+      <!-- back arm -->
+      <g class="arm back">
+        <rect x="24" y="55" width="8" height="35" rx="4" fill="var(--skin)"/>
+      </g>
+
+      <g class="bob">
+        <!-- torso -->
+        <rect x="16" y="45" width="28" height="55" rx="10" fill="var(--coat)"/>
+        <!-- head -->
+        <circle cx="30" cy="28" r="16" fill="var(--skin)"/>
+        <!-- hair -->
+        <path d="M14 24 Q30 8 46 24 Q46 14 30 12 Q14 14 14 24 Z" fill="#3a2b22"/>
+
+        <!-- umbrella -->
+        <g class="umbrella-group">
+          <line x1="30" y1="8" x2="30" y2="50" stroke="#4a3b2c" stroke-width="3"/>
+          <path d="M2 8 Q30 -16 58 8 Q46 0 30 0 Q14 0 2 8 Z" fill="var(--umbrella)"/>
+          <path d="M2 8 Q16 2 30 4 Q44 2 58 8" fill="none" stroke="#0e1420" stroke-width="1" opacity="0.3"/>
+        </g>
+      </g>
+
+      <!-- front arm -->
+      <g class="arm front">
+        <rect x="30" y="55" width="8" height="35" rx="4" fill="var(--skin)"/>
+      </g>
+      <!-- front leg -->
+      <g class="leg front">
+        <rect x="30" y="95" width="10" height="40" rx="4" fill="var(--coat)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="login-card" id="loginCard">
+    <h1 class="title">Stay dry, sign in</h1>
+    <p class="sub">Access your account below</p>
+    <form>
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="5" width="18" height="14" rx="2"/>
+          <path d="M3 7l9 6 9-6"/>
+        </svg>
+        <input type="email" placeholder="Gmail address" />
+      </div>
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="11" width="14" height="9" rx="2"/>
+          <path d="M8 11V8a4 4 0 018 0v3"/>
+        </svg>
+        <input type="password" placeholder="Password" />
+      </div>
+      <button type="submit" class="submit">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const walker = document.getElementById('walker');
+  const rain = document.getElementById('rain');
+  const card = document.getElementById('loginCard');
+
+  // spawn raindrops
+  for(let i=0;i<24;i++){
+    const d = document.createElement('div');
+    d.className = 'drop';
+    d.style.left = Math.random()*100 + '%';
+    d.style.animationDuration = (0.6 + Math.random()*0.5) + 's';
+    d.style.animationDelay = (Math.random()*1) + 's';
+    rain.appendChild(d);
+  }
+
+  // sequence: walk (3.2s) -> stop + open umbrella -> rain -> card
+  setTimeout(() => {
+    walker.classList.add('stopped');
+  }, 3100);
+
+  setTimeout(() => {
+    walker.classList.add('opened');
+    rain.classList.add('show');
+  }, 3300);
+
+  setTimeout(() => {
+    card.classList.add('show');
+  }, 4200);
+</script>
+
+</body>
+</html>
